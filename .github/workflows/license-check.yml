@@ -14,4 +14,4 @@ jobs:
       # They carry NVIDIA's proprietary-but-freely-redistributable license — not
       # copyleft, and never embedded in this Apache-2.0 code — so they are excluded
       # from the copyleft-safety audit.
-      exclude_packages: "^nvidia-.*"
+      exclude_packages: "^nvidia[-_].*"
