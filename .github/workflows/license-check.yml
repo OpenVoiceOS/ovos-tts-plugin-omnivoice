@@ -18,4 +18,5 @@ jobs:
       #                             MPL-2.0 tri-license option; safe as a library.
       #   soxr                    — LGPL-2.1 resampler used as an unmodified library,
       #                             which OVOS policy treats as safe-as-library.
-      exclude_packages: "^(nvidia[-_].*|cuda[-_]toolkit|orjson|soxr)"
+      # matched full-string against "name==version", so each alternative ends in .*
+      exclude_packages: "^(nvidia[-_].*|cuda[-_]toolkit.*|orjson.*|soxr.*)$"
