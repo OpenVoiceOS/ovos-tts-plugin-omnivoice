@@ -5,7 +5,7 @@ loadable. When the multi-GB model or torch is absent (as in the default CI
 lane), the test is skipped with a clear reason — it is never faked with
 importorskip and never hides a missing declared dependency.
 
-Enable it by installing the runtime (`pip install ".[gpu]"`, plus a torch build
+Enable it by installing the runtime (`pip install "."`, plus a torch build
 for your hardware) and setting OMNIVOICE_E2E=1.
 """
 

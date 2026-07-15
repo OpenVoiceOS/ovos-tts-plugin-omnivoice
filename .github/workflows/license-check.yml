@@ -9,3 +9,14 @@ jobs:
   license_check:
     uses: OpenVoiceOS/gh-automations/.github/workflows/license-check.yml@dev
     secrets: inherit
+    with:
+      # All transitive dependencies of the mandatory torch/omnivoice runtime, never
+      # embedded in this Apache-2.0 code, excluded from the copyleft-safety audit:
+      #   nvidia-*, cuda-toolkit  — NVIDIA proprietary CUDA runtime (freely
+      #                             redistributable, not copyleft).
+      #   orjson                  — permissive (Apache-2.0/MIT), flagged only for its
+      #                             MPL-2.0 tri-license option; safe as a library.
+      #   soxr                    — LGPL-2.1 resampler used as an unmodified library,
+      #                             which OVOS policy treats as safe-as-library.
+      # matched full-string against "name==version", so each alternative ends in .*
+      exclude_packages: "^(nvidia[-_].*|cuda[-_].*|orjson.*|soxr.*)$"
