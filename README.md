@@ -159,6 +159,19 @@ curl -G "http://localhost:9666/synthesize/مرحبا" --data-urlencode "lang=ar"
 curl -G "http://localhost:9666/synthesize/مرحبا" --data-urlencode "lang=ar-SA" -o najdi.wav
 ```
 
+### Docker
+
+A batteries-included image runs the plugin as an `ovos-tts-server`:
+
+```bash
+docker run -p 9666:9666 -v omnivoice-cache:/home/ovos/.cache \
+  ghcr.io/openvoiceos/ovos-tts-plugin-omnivoice:latest
+```
+
+The image is built and pushed to GHCR on every push to `dev`/`master`. See
+[docs/docker.md](docs/docker.md) for configuration and the bundled
+`docker-compose.yml`.
+
 ## License
 
 Apache-2.0. OmniVoice itself is distributed by the k2-fsa team under its own

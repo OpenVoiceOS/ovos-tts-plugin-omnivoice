@@ -1,0 +1,25 @@
+services:
+  omnivoice-tts:
+    image: ghcr.io/openvoiceos/ovos-tts-plugin-omnivoice:latest
+    # …or build from this checkout instead of pulling the published image:
+    # build: .
+    container_name: omnivoice-tts
+    restart: unless-stopped
+    ports:
+      - "9666:9666"
+    volumes:
+      # the OmniVoice model download + synth cache persist here (a named volume so
+      # the multi-GB model is fetched only once)
+      - omnivoice-cache:/home/ovos/.cache
+      # optional: mount a mycroft.conf to pick the language/voice, e.g.
+      #   {"tts": {"ovos-tts-plugin-omnivoice": {"lang": "ar-SA"}}}
+      # - ./mycroft.conf:/home/ovos/.config/mycroft/mycroft.conf:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:9666/status')"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+
+volumes:
+  omnivoice-cache:
