@@ -40,8 +40,10 @@ class OmniVoiceTTS(TTS):
             validator=OmniVoiceTTSValidator(self),
         )
         self.model_id = self.config.get("model", "k2-fsa/OmniVoice")
-        self.device = self.config.get("device", "cuda:0")
-        self.dtype = self.config.get("dtype", "float16")
+        # None => auto-detect at load time (CUDA if available, else CPU). This
+        # keeps the plugin working on CPU-only hosts without extra config.
+        self.device = self.config.get("device")
+        self.dtype = self.config.get("dtype")
         # Generation controls (see docs/generation-parameters.md upstream).
         self.num_step = self.config.get("num_step", 32)
         self.speed = self.config.get("speed")
@@ -62,10 +64,13 @@ class OmniVoiceTTS(TTS):
         import torch
         from omnivoice import OmniVoice
 
-        dtype = getattr(torch, self.dtype) if isinstance(self.dtype, str) else self.dtype
-        LOG.info(f"Loading OmniVoice model {self.model_id} on {self.device} ({dtype})")
+        device = self.device or ("cuda:0" if torch.cuda.is_available() else "cpu")
+        dtype = self.dtype or ("float16" if str(device).startswith("cuda") else "float32")
+        if isinstance(dtype, str):
+            dtype = getattr(torch, dtype)
+        LOG.info(f"Loading OmniVoice model {self.model_id} on {device} ({dtype})")
         self._model = OmniVoice.from_pretrained(
-            self.model_id, device_map=self.device, dtype=dtype
+            self.model_id, device_map=device, dtype=dtype
         )
 
     @property

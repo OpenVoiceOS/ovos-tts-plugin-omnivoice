@@ -36,6 +36,7 @@ gpu = [
 test = [
     "pytest>=7.0.0,<9",
     "pytest-timeout>=2.0.0",
+    "numpy",
 ]
 
 [project.urls]
