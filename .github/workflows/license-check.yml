@@ -10,8 +10,12 @@ jobs:
     uses: OpenVoiceOS/gh-automations/.github/workflows/license-check.yml@dev
     secrets: inherit
     with:
-      # torch pulls the NVIDIA CUDA runtime libraries on its default PyPI wheel.
-      # They carry NVIDIA's proprietary-but-freely-redistributable license — not
-      # copyleft, and never embedded in this Apache-2.0 code — so they are excluded
-      # from the copyleft-safety audit.
-      exclude_packages: "^nvidia[-_].*"
+      # All transitive dependencies of the mandatory torch/omnivoice runtime, never
+      # embedded in this Apache-2.0 code, excluded from the copyleft-safety audit:
+      #   nvidia-*, cuda-toolkit  — NVIDIA proprietary CUDA runtime (freely
+      #                             redistributable, not copyleft).
+      #   orjson                  — permissive (Apache-2.0/MIT), flagged only for its
+      #                             MPL-2.0 tri-license option; safe as a library.
+      #   soxr                    — LGPL-2.1 resampler used as an unmodified library,
+      #                             which OVOS policy treats as safe-as-library.
+      exclude_packages: "^(nvidia[-_].*|cuda[-_]toolkit|orjson|soxr)"
