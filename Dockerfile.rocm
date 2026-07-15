@@ -1,0 +1,48 @@
+# OmniVoice as an OVOS TTS server — AMD ROCm (GPU) build.
+#
+# Same server as the default CPU Dockerfile, but torch/torchaudio come from
+# PyTorch's ROCm index so synthesis runs on an AMD Radeon GPU. torch-ROCm
+# reports itself through the CUDA API, so the plugin's auto-detection picks the
+# GPU (float16) with no extra config.
+#
+# The OmniVoice model is multi-GB and downloads on first use into the mounted
+# cache volume, so it is not baked into the image.
+#
+# Run it with the GPU passed through — see docker-compose.gpu.yml and
+# docs/docker.md. In short you need: `--device /dev/kfd --device /dev/dri`,
+# membership of the host video/render groups, and (for GPUs not on torch-ROCm's
+# official gfx list, e.g. Navi 33 / gfx1102) `HSA_OVERRIDE_GFX_VERSION=11.0.0`.
+FROM python:3.11-slim
+
+# ROCm build arg — bump to match a torch-ROCm index that publishes wheels
+# (e.g. rocm6.1, rocm6.2, rocm6.3). The wheels bundle their own ROCm userspace,
+# so this need not equal the host's /opt/rocm version; only the kernel driver
+# (amdgpu/kfd) is shared with the host.
+ARG ROCM_INDEX=rocm6.2
+
+# System deps: libsndfile1 (soundfile), git/build tooling for any source wheels.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        libsndfile1 \
+        git \
+        build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY . /app
+
+# plugin + OmniVoice runtime + the OVOS TTS server.
+# - ROCm torch first so the default (CUDA) wheels never land in the image.
+# - setuptools<81 keeps ovos-plugin-manager's pkg_resources usage working.
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir torch torchaudio \
+        --index-url "https://download.pytorch.org/whl/${ROCM_INDEX}" \
+    && pip install --no-cache-dir "setuptools<81" "." ovos-tts-server
+
+RUN useradd -m -u 1000 ovos
+USER ovos
+
+EXPOSE 9666
+
+# --cache persists synthesized audio across restarts. The selected language/voice
+# is configured via mycroft.conf — see docs/docker.md.
+ENTRYPOINT ["ovos-tts-server", "--engine", "ovos-tts-plugin-omnivoice", "--cache"]

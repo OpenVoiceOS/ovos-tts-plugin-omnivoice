@@ -1,0 +1,36 @@
+# AMD ROCm (GPU) override for the OmniVoice TTS server.
+#
+# Use alongside the base compose file:
+#   docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d
+#
+# By default it pulls the published ROCm image and passes the AMD GPU into the
+# container. To build the ROCm image from this checkout instead, uncomment the
+# `build:` block below (and add `--build` to the compose command).
+services:
+  omnivoice-tts:
+    image: ghcr.io/openvoiceos/ovos-tts-plugin-omnivoice:dev-rocm
+    # …or build from this checkout instead of pulling the published image:
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile.rocm
+    #   # args:
+    #   #   ROCM_INDEX: rocm6.2
+    # AMD GPU passthrough.
+    devices:
+      - /dev/kfd
+      - /dev/dri
+    # The container's `ovos` user must be in the host video/render groups to
+    # reach the GPU device nodes. Group *names* inside the slim image may not
+    # map to the host GIDs, so pass the host GIDs numerically — check them with
+    # `getent group render video` on the host and override if they differ.
+    group_add:
+      - "video"
+      - "render"
+    security_opt:
+      - seccomp:unconfined
+    ipc: host
+    environment:
+      # Navi 33 (RX 7600, gfx1102) is not on torch-ROCm's official gfx list, so
+      # make it masquerade as gfx1100 (Navi 31), whose kernels are shipped. Drop
+      # or change this for a natively-supported card.
+      HSA_OVERRIDE_GFX_VERSION: "11.0.0"

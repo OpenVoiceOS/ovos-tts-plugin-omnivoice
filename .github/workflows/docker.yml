@@ -7,6 +7,7 @@ on:
   pull_request:
     paths:
       - Dockerfile
+      - Dockerfile.rocm
       - .dockerignore
       - pyproject.toml
       - .github/workflows/docker.yml
@@ -18,6 +19,18 @@ jobs:
     permissions:
       contents: read
       packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Default CPU image — the bare tags (latest / dev / <version>).
+          - variant: cpu
+            dockerfile: Dockerfile
+            suffix: ""
+          # AMD ROCm (GPU) image — same tags with a "-rocm" suffix.
+          - variant: rocm
+            dockerfile: Dockerfile.rocm
+            suffix: "-rocm"
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
@@ -25,6 +38,9 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/${{ github.repository }}
+          flavor: |
+            latest=false
+            suffix=${{ matrix.suffix }}
           tags: |
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' }}
             type=raw,value=dev,enable=${{ github.ref == 'refs/heads/dev' }}
@@ -39,8 +55,9 @@ jobs:
       - uses: docker/build-push-action@v6
         with:
           context: .
+          file: ${{ matrix.dockerfile }}
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=${{ matrix.variant }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.variant }}
