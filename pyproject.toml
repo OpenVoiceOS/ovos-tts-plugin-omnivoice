@@ -21,18 +21,15 @@ dependencies = [
     "ovos-plugin-manager>=2.1.0,<3.0.0",
     "ovos-utils>=0.3.0,<1.0.0",
     "soundfile",
-]
-
-[project.optional-dependencies]
-# The OmniVoice runtime (torch + the `omnivoice` package) is multi-GB and is
-# NOT required to import the plugin, validate config, or run the unit tests.
-# Install it only where synthesis actually runs. Follow the upstream PyTorch
-# instructions for the right CUDA/XPU/CPU build, then:  pip install ".[gpu]"
-gpu = [
+    # The OmniVoice runtime — required to synthesize. torch/torchaudio come from
+    # PyPI's default build; to target a specific accelerator reinstall torch from
+    # the matching index (CPU: .../whl/cpu, CUDA: .../whl/cu128, AMD: .../whl/rocm6.2).
     "omnivoice",
     "torch",
     "torchaudio",
 ]
+
+[project.optional-dependencies]
 test = [
     "pytest>=7.0.0,<9",
     "pytest-timeout>=2.0.0",

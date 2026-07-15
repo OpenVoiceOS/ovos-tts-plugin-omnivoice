@@ -33,7 +33,7 @@ curl http://localhost:9666/status
 |---|---|
 | Base | `python:3.11-slim` |
 | System | `libsndfile1` |
-| Python | `ovos-tts-plugin-omnivoice[gpu]` (OmniVoice + CPU torch/torchaudio) + `ovos-tts-server` |
+| Python | `ovos-tts-plugin-omnivoice` (OmniVoice + CPU torch/torchaudio built in) + `ovos-tts-server` |
 | Model | downloaded on first use into `/home/ovos/.cache` (persist via a volume) |
 | Port | `9666` |
 

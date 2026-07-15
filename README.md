@@ -70,22 +70,29 @@ distinct trained variety instead of collapsing to Modern Standard Arabic:
 
 ## Install
 
-The plugin itself is lightweight. The OmniVoice runtime (PyTorch + the
-`omnivoice` package, multi-GB) is an optional extra, so config/validation works
-without it.
+The OmniVoice runtime (PyTorch + the multi-GB `omnivoice` package) is a core
+dependency, so a plain install is enough to synthesize:
 
 ```bash
-# 1. install a torch build for your hardware (see the OmniVoice README), e.g. CUDA:
-pip install torch==2.8.0+cu128 torchaudio==2.8.0+cu128 \
-    --extra-index-url https://download.pytorch.org/whl/cu128
-# ...or a CPU build:
-pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu
-
-# 2. install the plugin with the runtime extra
-pip install ovos-tts-plugin-omnivoice[gpu]
+pip install ovos-tts-plugin-omnivoice
 ```
 
-Weights download automatically from `k2-fsa/OmniVoice` on the first synthesis.
+It runs on **CPU or GPU** — a GPU is optional (faster), **not required**. The
+default install pulls PyPI's default torch build (CPU-capable). To target a
+specific accelerator, reinstall torch from the matching index:
+
+```bash
+# NVIDIA CUDA:
+pip install torch==2.8.0+cu128 torchaudio==2.8.0+cu128 \
+    --extra-index-url https://download.pytorch.org/whl/cu128
+# ...or AMD ROCm:
+pip install torch torchaudio --index-url https://download.pytorch.org/whl/rocm6.2
+# ...or a slim CPU-only build:
+pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu
+```
+
+The plugin auto-detects the device (CUDA/ROCm if available, else CPU). Weights
+download automatically from `k2-fsa/OmniVoice` on the first synthesis.
 
 ## Configuration
 
@@ -138,7 +145,7 @@ Example: clone a reference voice:
 Install the server alongside this plugin, then point it at the module:
 
 ```bash
-pip install ovos-tts-server ovos-tts-plugin-omnivoice[gpu]
+pip install ovos-tts-server ovos-tts-plugin-omnivoice
 
 ovos-tts-server \
     --engine ovos-tts-plugin-omnivoice \
