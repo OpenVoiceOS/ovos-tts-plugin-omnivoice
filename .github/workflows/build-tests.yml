@@ -2,13 +2,19 @@ name: Build Tests
 
 on:
   pull_request:
+    branches: [dev, master, main]
   push:
     branches: [dev, master]
+  workflow_dispatch:
 
 jobs:
   build:
     uses: OpenVoiceOS/gh-automations/.github/workflows/build-tests.yml@dev
     secrets: inherit
     with:
-      package_name: ovos-tts-plugin-omnivoice
-      version_file: ovos_tts_plugin_omnivoice/version.py
+      python_versions: '["3.10", "3.11", "3.12", "3.13", "3.14"]'
+      # Install the [test] extra and run the unit suite. The multi-GB OmniVoice
+      # runtime is NOT installed here; the real-synthesis e2e is gated behind
+      # OMNIVOICE_E2E=1 and skips cleanly when the runtime is absent.
+      install_extras: "test"
+      test_path: "test"
