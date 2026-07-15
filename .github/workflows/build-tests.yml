@@ -1,0 +1,14 @@
+name: Build Tests
+
+on:
+  pull_request:
+  push:
+    branches: [dev, master]
+
+jobs:
+  build:
+    uses: OpenVoiceOS/gh-automations/.github/workflows/build-tests.yml@dev
+    secrets: inherit
+    with:
+      package_name: ovos-tts-plugin-omnivoice
+      version_file: ovos_tts_plugin_omnivoice/version.py

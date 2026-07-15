@@ -1,0 +1,11 @@
+name: Repo Health
+
+on:
+  pull_request:
+  push:
+    branches: [dev, master]
+
+jobs:
+  health:
+    uses: OpenVoiceOS/gh-automations/.github/workflows/repo-health.yml@dev
+    secrets: inherit

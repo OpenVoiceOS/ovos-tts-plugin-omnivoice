@@ -1,0 +1,14 @@
+name: Publish Stable
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  publish:
+    uses: OpenVoiceOS/gh-automations/.github/workflows/publish-stable.yml@dev
+    secrets: inherit
+    with:
+      package_name: ovos-tts-plugin-omnivoice
+      version_file: ovos_tts_plugin_omnivoice/version.py

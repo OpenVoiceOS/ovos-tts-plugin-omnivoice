@@ -1,0 +1,15 @@
+name: Release Workflow
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [dev]
+  workflow_dispatch:
+
+jobs:
+  release:
+    uses: OpenVoiceOS/gh-automations/.github/workflows/publish-alpha.yml@dev
+    secrets: inherit
+    with:
+      package_name: ovos-tts-plugin-omnivoice
+      version_file: ovos_tts_plugin_omnivoice/version.py
