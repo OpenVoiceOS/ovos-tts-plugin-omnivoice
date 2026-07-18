@@ -120,6 +120,8 @@ Config keys:
 | `instruct` | — | free-text voice-design string (overrides `voice`) |
 | `ref_audio` | — | path to a 3–10 s reference clip → voice cloning mode |
 | `ref_text` | — | transcript of `ref_audio` (auto-transcribed if omitted) |
+| `clone_dir` | — | directory of `<voice_id>.wav` (+ optional `<voice_id>.txt`) pairs; each becomes a selectable cloned voice |
+| `clone_voices` | — | explicit map `{voice_id: {ref_audio, ref_text}}`; overrides `clone_dir` entries |
 | `device` | auto | `cuda:0`, `cpu`, `mps`, or `xpu`; auto-detected (CUDA if available, else CPU) |
 | `dtype` | auto | torch dtype; `float16` on CUDA, `float32` on CPU |
 | `num_step` | `32` | diffusion steps (16 = faster, 32 = higher quality) |
@@ -139,6 +141,58 @@ Example: clone a reference voice:
   }
 }
 ```
+
+### Named cloned voices (a speaker roster)
+
+`ref_audio` clones one global voice. To expose a whole roster of cloned speakers,
+point `clone_dir` at a directory of reference pairs:
+
+```
+/home/ovos/voices/
+├── speaker6_male.wav      # 3–10 s reference clip
+├── speaker6_male.txt      # its transcript (optional, recommended)
+├── speaker3_female.wav
+└── speaker3_female.txt
+```
+
+```json
+{
+  "tts": {
+    "module": "ovos-tts-plugin-omnivoice",
+    "ovos-tts-plugin-omnivoice": {
+      "lang": "ar",
+      "clone_dir": "/home/ovos/voices"
+    }
+  }
+}
+```
+
+Every `<voice_id>.wav` becomes a selectable voice: a request with
+`voice="speaker6_male"` synthesizes with that reference clip. Adding a speaker is
+dropping in another wav+txt pair — no config change. Voice ids that match no pair
+fall back to the voice-design presets as before.
+
+For custom naming or refs outside a single directory, `clone_voices` maps ids
+explicitly and wins over scanned entries:
+
+```json
+{
+  "tts": {
+    "module": "ovos-tts-plugin-omnivoice",
+    "ovos-tts-plugin-omnivoice": {
+      "lang": "ar",
+      "clone_dir": "/home/ovos/voices",
+      "clone_voices": {
+        "sarah": {"ref_audio": "/mnt/refs/agent.wav", "ref_text": "مرحبا بك"}
+      }
+    }
+  }
+}
+```
+
+Through `ovos-tts-server`'s ElevenLabs-compatible API the voice id travels in the
+URL path, so each cloned speaker is reachable as
+`/elevenlabs/v1/text-to-speech/<voice_id>`.
 
 ## Serve it via ovos-tts-server
 
