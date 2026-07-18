@@ -129,6 +129,62 @@ class TestPlugin(unittest.TestCase):
         self.assertEqual(kwargs["ref_text"], "hi")
         self.assertNotIn("instruct", kwargs)
 
+    def test_clone_dir_scans_wav_txt_pairs(self):
+        import os
+        with tempfile.TemporaryDirectory() as d:
+            open(os.path.join(d, "speaker6.wav"), "wb").close()
+            with open(os.path.join(d, "speaker6.txt"), "w", encoding="utf-8") as f:
+                f.write("مرحبا بك\n")
+            open(os.path.join(d, "ziyad_a.wav"), "wb").close()  # no transcript
+            open(os.path.join(d, "notes.md"), "w").close()      # ignored
+            tts, _ = self._make_tts(config={"lang": "ar", "clone_dir": d})
+            self.assertEqual(set(tts.clone_voices), {"speaker6", "ziyad_a"})
+            self.assertEqual(tts.clone_voices["speaker6"]["ref_text"], "مرحبا بك")
+            self.assertNotIn("ref_text", tts.clone_voices["ziyad_a"])
+
+    def test_clone_dir_missing_is_tolerated(self):
+        tts, _ = self._make_tts(config={"lang": "ar", "clone_dir": "/nonexistent"})
+        self.assertEqual(tts.clone_voices, {})
+
+    def test_named_clone_voice_selected_by_voice_id(self):
+        import os
+        with tempfile.TemporaryDirectory() as d:
+            open(os.path.join(d, "speaker6.wav"), "wb").close()
+            with open(os.path.join(d, "speaker6.txt"), "w", encoding="utf-8") as f:
+                f.write("مرحبا")
+            tts, model = self._make_tts(config={"lang": "ar", "clone_dir": d})
+            with tempfile.NamedTemporaryFile(suffix=".wav") as f:
+                tts.get_tts("مرحبا", f.name, lang="ar", voice="speaker6")
+            kwargs = model.generate.call_args.kwargs
+            self.assertEqual(kwargs["ref_audio"], os.path.join(d, "speaker6.wav"))
+            self.assertEqual(kwargs["ref_text"], "مرحبا")
+            self.assertNotIn("instruct", kwargs)
+
+    def test_unknown_voice_falls_back_to_design_despite_clone_dir(self):
+        import os
+        with tempfile.TemporaryDirectory() as d:
+            open(os.path.join(d, "speaker6.wav"), "wb").close()
+            tts, model = self._make_tts(config={"lang": "ar", "clone_dir": d})
+            with tempfile.NamedTemporaryFile(suffix=".wav") as f:
+                tts.get_tts("مرحبا", f.name, lang="ar", voice="female")
+            kwargs = model.generate.call_args.kwargs
+            self.assertNotIn("ref_audio", kwargs)
+            self.assertEqual(kwargs.get("instruct"), "female")
+
+    def test_clone_voices_map_overrides_clone_dir(self):
+        import os
+        with tempfile.TemporaryDirectory() as d:
+            open(os.path.join(d, "speaker6.wav"), "wb").close()
+            tts, model = self._make_tts(config={
+                "lang": "ar", "clone_dir": d,
+                "clone_voices": {"speaker6": {"ref_audio": "/refs/other.wav",
+                                              "ref_text": "بديل"}}})
+            with tempfile.NamedTemporaryFile(suffix=".wav") as f:
+                tts.get_tts("مرحبا", f.name, lang="ar", voice="speaker6")
+            kwargs = model.generate.call_args.kwargs
+            self.assertEqual(kwargs["ref_audio"], "/refs/other.wav")
+            self.assertEqual(kwargs["ref_text"], "بديل")
+
     def test_validator_accepts_any_lang(self):
         from ovos_tts_plugin_omnivoice import OmniVoiceTTSValidator
 

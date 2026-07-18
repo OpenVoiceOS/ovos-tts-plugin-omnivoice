@@ -52,11 +52,41 @@ class OmniVoiceTTS(TTS):
         self.ref_text = self.config.get("ref_text")
         # Voice-design instruction (optional). Falls back to the per-voice preset.
         self.instruct = self.config.get("instruct")
+        # Named cloned voices. Two sources, merged (explicit map wins):
+        # - "clone_voices": {"<voice_id>": {"ref_audio": path, "ref_text": str}}
+        # - "clone_dir": a directory scanned for <voice_id>.wav + <voice_id>.txt
+        #   pairs (the transcript file is optional but strongly recommended).
+        # A request whose ``voice`` matches an entry synthesizes with that
+        # reference clip, so a whole speaker roster is exposed by dropping
+        # wav+txt pairs in the directory — no per-voice configuration.
+        self.clone_voices = dict(self._scan_clone_dir(self.config.get("clone_dir")))
+        self.clone_voices.update(self.config.get("clone_voices") or {})
 
         self._model = None
         # Lazy load so config/validator tests do not need the multi-GB weights.
         if not self.config.get("lazy", True):
             self._load_model()
+
+    @staticmethod
+    def _scan_clone_dir(path):
+        """Yield ``(voice_id, {"ref_audio", "ref_text"})`` for wav/txt pairs in *path*."""
+        if not path:
+            return
+        import os
+
+        if not os.path.isdir(path):
+            LOG.warning(f"clone_dir does not exist: {path}")
+            return
+        for name in sorted(os.listdir(path)):
+            if not name.endswith(".wav"):
+                continue
+            voice_id = name[:-4]
+            entry = {"ref_audio": os.path.join(path, name)}
+            txt = os.path.join(path, voice_id + ".txt")
+            if os.path.isfile(txt):
+                with open(txt, encoding="utf-8") as f:
+                    entry["ref_text"] = f.read().strip()
+            yield voice_id, entry
 
     def _load_model(self):
         if self._model is not None:
@@ -108,7 +138,13 @@ class OmniVoiceTTS(TTS):
         if self.speed is not None:
             gen_kwargs["speed"] = self.speed
 
-        if self.ref_audio:
+        clone = self.clone_voices.get(voice)
+        if clone:
+            # Named cloned voice (clone_voices / clone_dir).
+            gen_kwargs["ref_audio"] = clone["ref_audio"]
+            if clone.get("ref_text"):
+                gen_kwargs["ref_text"] = clone["ref_text"]
+        elif self.ref_audio:
             # Voice cloning mode.
             gen_kwargs["ref_audio"] = self.ref_audio
             if self.ref_text:
