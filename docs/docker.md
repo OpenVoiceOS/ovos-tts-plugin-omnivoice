@@ -125,3 +125,6 @@ docker build -f Dockerfile.rocm -t ovos-tts-plugin-omnivoice:rocm .
 
 Adjust the ROCm wheel index with `--build-arg ROCM_INDEX=rocm6.3` if a different
 ROCm build matches your host driver better.
+
+---
+[Home](../README.md)
